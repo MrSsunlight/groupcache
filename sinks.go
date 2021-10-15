@@ -23,25 +23,32 @@ import (
 )
 
 // A Sink receives data from a Get call.
-//
+
 // Implementation of Getter must call exactly one of the Set methods
 // on success.
+// Sink 从 Get 调用接收数据。
+// Getter 实现必须调用下面的某个Set方法。
 type Sink interface {
 	// SetString sets the value to s.
+	// 将值设置成 s
 	SetString(s string) error
 
 	// SetBytes sets the value to the contents of v.
 	// The caller retains ownership of v.
+	// 调用者保留 v 的所有权
 	SetBytes(v []byte) error
 
 	// SetProto sets the value to the encoded version of m.
 	// The caller retains ownership of m.
+	// 调用者保留 m 的所有权
 	SetProto(m proto.Message) error
 
 	// view returns a frozen view of the bytes for caching.
+	// 返回缓存字节的冻结视图， 注意byteview 类型在返回值里
 	view() (ByteView, error)
 }
 
+// 克隆一个 byte 切片
 func cloneBytes(b []byte) []byte {
 	c := make([]byte, len(b))
 	copy(c, b)
@@ -66,21 +73,26 @@ func setSinkView(s Sink, v ByteView) error {
 }
 
 // StringSink returns a Sink that populates the provided string pointer.
+// 根据获取到的字符串指针 构造一个stringsink 结构体实例
 func StringSink(sp *string) Sink {
 	return &stringSink{sp: sp}
 }
 
+// 两个成员：一个字符串指针，一个byteview 类型
+// stringsink 实现了 sink接口
 type stringSink struct {
 	sp *string
 	v  ByteView
 	// TODO(bradfitz): track whether any Sets were called.
 }
 
+// 获取stringsink 的 byteview
 func (s *stringSink) view() (ByteView, error) {
 	// TODO(bradfitz): return an error if no Set was called
 	return s.v, nil
 }
 
+// 设置stringsink 子符串属性
 func (s *stringSink) SetString(v string) error {
 	s.v.b = nil
 	s.v.s = v
@@ -88,10 +100,12 @@ func (s *stringSink) SetString(v string) error {
 	return nil
 }
 
+// 将 v 放进去
 func (s *stringSink) SetBytes(v []byte) error {
 	return s.SetString(string(v))
 }
 
+// 从 pb 中获取数据，然后放入stringsink 的 sp 和 v.b
 func (s *stringSink) SetProto(m proto.Message) error {
 	b, err := proto.Marshal(m)
 	if err != nil {
