@@ -29,13 +29,17 @@ import (
 //
 // A ByteView is meant to be used as a value type, not
 // a pointer (like a time.Time).
+// 是一个不可变得 bytes，本质是一个[]byte 或者一个 string
+// byteview 应该被当成一个值使用，而不应该当成一个指针
 type ByteView struct {
 	// If b is non-nil, b is used, else s is used.
+	// 如果b是非nil，则使用b，否则使用s
 	b []byte
 	s string
 }
 
 // Len returns the view's length.
+// 返回一个view的长度
 func (v ByteView) Len() int {
 	if v.b != nil {
 		return len(v.b)
@@ -44,6 +48,7 @@ func (v ByteView) Len() int {
 }
 
 // ByteSlice returns a copy of the data as a byte slice.
+// 获取一份[]byte类型的view值的拷贝
 func (v ByteView) ByteSlice() []byte {
 	if v.b != nil {
 		return cloneBytes(v.b)
@@ -52,6 +57,7 @@ func (v ByteView) ByteSlice() []byte {
 }
 
 // String returns the data as a string, making a copy if necessary.
+// 上一个是返回[]byte类型，这里是string类型
 func (v ByteView) String() string {
 	if v.b != nil {
 		return string(v.b)
@@ -60,14 +66,17 @@ func (v ByteView) String() string {
 }
 
 // At returns the byte at index i.
+// 返回第 i 个byte
 func (v ByteView) At(i int) byte {
 	if v.b != nil {
 		return v.b[i]
 	}
+	// 字符串索引获取到的值是byte类型
 	return v.s[i]
 }
 
 // Slice slices the view between the provided from and to indices.
+// 返回从索引from到to的view的切分结果
 func (v ByteView) Slice(from, to int) ByteView {
 	if v.b != nil {
 		return ByteView{b: v.b[from:to]}
@@ -76,6 +85,7 @@ func (v ByteView) Slice(from, to int) ByteView {
 }
 
 // SliceFrom slices the view from the provided index until the end.
+// 相当于上面的to为len(b)
 func (v ByteView) SliceFrom(from int) ByteView {
 	if v.b != nil {
 		return ByteView{b: v.b[from:]}
@@ -84,6 +94,7 @@ func (v ByteView) SliceFrom(from int) ByteView {
 }
 
 // Copy copies b into dest and returns the number of bytes copied.
+// 拷贝一份view到dest
 func (v ByteView) Copy(dest []byte) int {
 	if v.b != nil {
 		return copy(dest, v.b)
@@ -93,6 +104,7 @@ func (v ByteView) Copy(dest []byte) int {
 
 // Equal returns whether the bytes in b are the same as the bytes in
 // b2.
+// 相等判断，具体比较的实现在下面
 func (v ByteView) Equal(b2 ByteView) bool {
 	if b2.b == nil {
 		return v.EqualString(b2.s)
@@ -100,16 +112,20 @@ func (v ByteView) Equal(b2 ByteView) bool {
 	return v.EqualBytes(b2.b)
 }
 
-// EqualString returns whether the bytes in b are the same as the bytes
-// in s.
+// EqualString returns whether the bytes in b are the same as the bytes in s.
+// EqualString返回b中的字节是否与s中的字节相同
 func (v ByteView) EqualString(s string) bool {
+	// 如果b为nil，则比较s是否相等
 	if v.b == nil {
 		return v.s == s
 	}
+	// l为view的长度，实现在上面
 	l := v.Len()
+	// 长度不同直接返回false
 	if len(s) != l {
 		return false
 	}
+	// 判断[]byte中的每一个byte是否和string的每一个字符相等
 	for i, bi := range v.b {
 		if bi != s[i] {
 			return false
@@ -118,16 +134,19 @@ func (v ByteView) EqualString(s string) bool {
 	return true
 }
 
-// EqualBytes returns whether the bytes in b are the same as the bytes
-// in b2.
+// EqualBytes returns whether the bytes in b are the same as the bytes in b2.
+// EqualBytes返回b中的字节是否与b2中的字节相同
 func (v ByteView) EqualBytes(b2 []byte) bool {
+	// b不为空，直接通过Equal方法比较
 	if v.b != nil {
 		return bytes.Equal(v.b, b2)
 	}
 	l := v.Len()
+	// 长度不等直接返回false
 	if len(b2) != l {
 		return false
 	}
+	// 与上一个方法类似，比较字符串和[]byte每一个byte是否相等
 	for i, bi := range b2 {
 		if bi != v.s[i] {
 			return false
@@ -137,6 +156,7 @@ func (v ByteView) EqualBytes(b2 []byte) bool {
 }
 
 // Reader returns an io.ReadSeeker for the bytes in v.
+// 返回值其实是bytes包或者strings包中的*Reader类型，这是个struct 实现了io.ReadSeeker等接口
 func (v ByteView) Reader() io.ReadSeeker {
 	if v.b != nil {
 		return bytes.NewReader(v.b)
@@ -145,6 +165,7 @@ func (v ByteView) Reader() io.ReadSeeker {
 }
 
 // ReadAt implements io.ReaderAt on the bytes in v.
+// 从off 位置拷贝一份数据给 p
 func (v ByteView) ReadAt(p []byte, off int64) (n int, err error) {
 	if off < 0 {
 		return 0, errors.New("view: invalid offset")
@@ -152,6 +173,7 @@ func (v ByteView) ReadAt(p []byte, off int64) (n int, err error) {
 	if off >= int64(v.Len()) {
 		return 0, io.EOF
 	}
+	// 从off开始拷贝一份数据到p
 	n = v.SliceFrom(int(off)).Copy(p)
 	if n < len(p) {
 		err = io.EOF
@@ -160,6 +182,7 @@ func (v ByteView) ReadAt(p []byte, off int64) (n int, err error) {
 }
 
 // WriteTo implements io.WriterTo on the bytes in v.
+// 将v写入w
 func (v ByteView) WriteTo(w io.Writer) (n int64, err error) {
 	var m int
 	if v.b != nil {
