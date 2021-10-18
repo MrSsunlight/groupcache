@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // peers.go defines how processes find and communicate with their peers.
-
+// 定义进程如何查找同等进程并与之通信
 package groupcache
 
 import (
@@ -25,15 +25,18 @@ import (
 )
 
 // Context is an alias to context.Context for backwards compatibility purposes.
+// Context是 context.Context 的别名，以便向后兼容
 type Context = context.Context
 
 // ProtoGetter is the interface that must be implemented by a peer.
+// Tips：ProtoGetter 这个接口必须由 对方 实现？？？
 type ProtoGetter interface {
 	Get(ctx context.Context, in *pb.GetRequest, out *pb.GetResponse) error
 }
 
 // PeerPicker is the interface that must be implemented to locate
 // the peer that owns a specific key.
+// PeerPicker是必须实现的接口，用于定位拥有特定密钥的对等体peer
 type PeerPicker interface {
 	// PickPeer returns the peer that owns the specific key
 	// and true to indicate that a remote peer was nominated.
