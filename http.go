@@ -142,7 +142,7 @@ func (p *HTTPPool) Set(peers ...string) {
 	// 创建缓冲池
 	p.peers = consistenthash.New(p.opts.Replicas, p.opts.HashFn)
 	// 将服务器添加到缓存池
-	p.peers.Add(peers...
+	p.peers.Add(peers...)
 	//
 	p.httpGetters = make(map[string]*httpGetter, len(peers))
 	for _, peer := range peers {
