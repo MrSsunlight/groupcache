@@ -54,6 +54,8 @@ var (
 // It is called once, when the first group is created.
 // Either RegisterPeerPicker or RegisterPerGroupPeerPicker should be
 // called exactly once, but not both.
+// RegisterPeerPicker 注册 peer 初始化函数。 在创建第一个组时调用一次。
+// RegisterPeerPicker 或 RegisterPerGroupPeerPicker 应该只调用一次，但不能同时调用
 func RegisterPeerPicker(fn func() PeerPicker) {
 	if portPicker != nil {
 		panic("RegisterPeerPicker called more than once")
